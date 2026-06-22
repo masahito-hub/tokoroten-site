@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) exit;
 
 register_activation_hook(__FILE__, function() {
     if (!get_option('acourt_ad_slots')) {
-        add_option('acourt_ad_slots', ['enabled'=>1,'test_mode'=>1,'slot_top'=>1,'slot_middle'=>1,'slot_bottom'=>1]);
+        add_option('acourt_ad_slots', ['enabled'=>0,'test_mode'=>1,'slot_top'=>1,'slot_middle'=>1,'slot_bottom'=>1]);
     }
 });
 
@@ -99,16 +99,16 @@ class ACourtAdSlots {
         $top = $o['slot_top'] ? $this->slot('top', '記事上部') : '';
         $bottom = $o['slot_bottom'] ? $this->slot('bottom', '記事下部') : '';
         $mid = '';
-        if ($o['slot_middle'] && strpos($content, '<!-- ad-middle -->') !== false) {
+        if ($o['slot_middle'] && strpos($content, '<!-- ad:middle -->') !== false) {
             $mid = $this->slot('middle', '記事中央');
-            $content = str_replace('<!-- ad-middle -->', $mid, $content);
+            $content = str_replace('<!-- ad:middle -->', $mid, $content);
         }
         return $top . $content . $bottom;
     }
 
     private function should_show() {
         if (!$this->options['enabled']) return false;
-        if (is_admin() || is_feed() || defined('REST_REQUEST')) return false;
+        if (is_admin() || is_feed() || defined('REST_REQUEST') && REST_REQUEST) return false;
         if (!is_singular('post') || !is_main_query()) return false;
         if (post_password_required()) return false;
         return true;
