@@ -18,7 +18,7 @@
 | --tklab-white | #FFFFFF | カード背景 |
 
 ## Typography
-システムフォント使用（外部フォント追加なし）
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", sans-serif
 
 ## Target Elements
 - ヘッダー・ナビゲーション
