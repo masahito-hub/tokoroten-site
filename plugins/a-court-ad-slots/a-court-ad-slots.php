@@ -7,6 +7,12 @@
  */
 if (!defined('ABSPATH')) exit;
 
+register_activation_hook(__FILE__, function() {
+    if (!get_option('acourt_ad_slots')) {
+        add_option('acourt_ad_slots', ['enabled'=>1,'test_mode'=>1,'slot_top'=>1,'slot_middle'=>1,'slot_bottom'=>1]);
+    }
+});
+
 class ACourtAdSlots {
     private static $instance = null;
     private $options;
