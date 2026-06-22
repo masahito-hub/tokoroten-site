@@ -109,7 +109,7 @@ class ACourtAdSlots {
     private function should_show() {
         if (!$this->options['enabled']) return false;
         if (is_admin() || is_feed() || defined('REST_REQUEST') && REST_REQUEST) return false;
-        if (!is_singular('post') || !is_main_query()) return false;
+        if (!is_singular('post') || !in_the_loop()) return false;
         if (post_password_required()) return false;
         return true;
     }
