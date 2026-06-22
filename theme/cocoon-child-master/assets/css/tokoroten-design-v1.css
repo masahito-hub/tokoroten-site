@@ -1,0 +1,63 @@
+/* ところてん.tokyo Design v1 - 水辺の小さな研究所 */
+:root {
+  --tklab-bg: #F6FBFA;
+  --tklab-water: #DDF4F0;
+  --tklab-primary: #28777A;
+  --tklab-text: #173F42;
+  --tklab-muted: #597477;
+  --tklab-accent: #D7B46A;
+  --tklab-white: #FFFFFF;
+}
+body { background-color: var(--tklab-bg); color: var(--tklab-text); }
+a { color: var(--tklab-primary); }
+a:hover { color: var(--tklab-accent); }
+
+/* Header */
+.header-container { background: linear-gradient(135deg, var(--tklab-water) 0%, var(--tklab-bg) 100%); border-bottom: 2px solid var(--tklab-primary); }
+.logo-header .site-name-text { color: var(--tklab-primary); }
+.tagline { color: var(--tklab-muted); }
+
+/* Navigation */
+.navi { background-color: var(--tklab-primary); }
+.navi-in > ul > li > a { color: var(--tklab-white); }
+.navi-in > ul > li > a:hover { background-color: var(--tklab-accent); }
+
+/* Entry Cards */
+.entry-card-wrap { background-color: var(--tklab-white); border: 1px solid var(--tklab-water); border-radius: 8px; box-shadow: 0 2px 8px rgba(40,119,122,0.08); transition: box-shadow 0.2s; }
+.entry-card-wrap:hover { box-shadow: 0 4px 16px rgba(40,119,122,0.15); }
+.entry-card-title { color: var(--tklab-text); }
+.entry-card-snippet { color: var(--tklab-muted); }
+.cat-label { background-color: var(--tklab-primary); color: var(--tklab-white); border-radius: 4px; }
+
+/* Article */
+.article { background-color: var(--tklab-white); border-radius: 8px; box-shadow: 0 2px 8px rgba(40,119,122,0.08); }
+.article h2 { color: var(--tklab-primary); border-bottom: 3px solid var(--tklab-water); padding-bottom: 0.5em; }
+.article h3 { color: var(--tklab-primary); border-left: 4px solid var(--tklab-accent); padding-left: 0.8em; }
+
+/* Tables */
+.article th { background-color: var(--tklab-primary); color: var(--tklab-white); padding: 0.8em; }
+.article td { border: 1px solid var(--tklab-water); padding: 0.8em; }
+.article tr:nth-child(even) { background-color: var(--tklab-bg); }
+
+/* Blockquote */
+.article blockquote { background-color: var(--tklab-water); border-left: 4px solid var(--tklab-primary); padding: 1em 1.5em; border-radius: 0 8px 8px 0; }
+
+/* Buttons */
+.btn, .submit, input[type="submit"] { background-color: var(--tklab-accent); color: var(--tklab-white); border: none; border-radius: 6px; }
+.btn:hover, .submit:hover, input[type="submit"]:hover { background-color: var(--tklab-primary); }
+
+/* Footer */
+.footer { background: linear-gradient(135deg, var(--tklab-bg) 0%, var(--tklab-water) 100%); border-top: 2px solid var(--tklab-primary); }
+.footer a { color: var(--tklab-primary); }
+.copyright { color: var(--tklab-muted); }
+
+/* Sidebar */
+.sidebar { background-color: var(--tklab-white); border-radius: 8px; }
+.widget-title { color: var(--tklab-primary); border-bottom: 2px solid var(--tklab-water); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .header-container { padding: 0.5em; }
+  .entry-card-wrap { margin: 0.5em 0; border-radius: 6px; }
+  .article { border-radius: 0; }
+}
