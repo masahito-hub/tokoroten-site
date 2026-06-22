@@ -1,0 +1,76 @@
+/* ところてん.tokyo Design v1 - 水辺の小さな研究所 */
+:root {
+  --tklab-bg: #F6FBFA;
+  --tklab-water: #DDF4F0;
+  --tklab-primary: #28777A;
+  --tklab-text: #173F42;
+  --tklab-muted: #597477;
+  --tklab-accent: #D7B46A;
+  --tklab-white: #FFFFFF;
+}
+body {
+  background-color: var(--tklab-bg);
+  color: var(--tklab-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", sans-serif;
+}
+
+/* Links - scoped to content */
+.article a, .entry-content a, .content a { color: var(--tklab-primary); }
+.article a:hover, .entry-content a:hover, .content a:hover { color: var(--tklab-text); text-decoration: underline; }
+
+/* Header */
+.header-container { background: linear-gradient(135deg, var(--tklab-water) 0%, var(--tklab-bg) 100%); border-bottom: 2px solid var(--tklab-primary); }
+.logo-header .site-name-text { color: var(--tklab-primary); }
+.tagline { color: var(--tklab-muted); }
+
+/* Navigation - hover uses accent bg with dark text */
+.navi { background-color: var(--tklab-primary); }
+.navi-in > ul > li > a { color: var(--tklab-white); }
+.navi-in > ul > li > a:hover { background-color: var(--tklab-accent); color: var(--tklab-text); }
+
+/* Entry Cards */
+.entry-card-wrap { background-color: var(--tklab-white); border: 1px solid var(--tklab-water); border-radius: 8px; box-shadow: 0 2px 8px rgba(40,119,122,0.08); transition: box-shadow 0.2s; }
+.entry-card-wrap:hover { box-shadow: 0 4px 16px rgba(40,119,122,0.15); }
+.entry-card-title { color: var(--tklab-text); }
+.entry-card-snippet { color: var(--tklab-muted); }
+.cat-label { background-color: var(--tklab-primary); color: var(--tklab-white); border-radius: 4px; }
+
+/* Article */
+.article { background-color: var(--tklab-white); border-radius: 8px; box-shadow: 0 2px 8px rgba(40,119,122,0.08); }
+/* H2: water bg + left accent, reset default border */
+.article h2 { background-color: var(--tklab-water); color: var(--tklab-primary); border: none; border-left: 4px solid var(--tklab-primary); padding: 0.6em 1em; margin: 1.5em 0 1em; }
+.article h3 { color: var(--tklab-primary); border-left: 4px solid var(--tklab-accent); padding-left: 0.8em; }
+
+/* Tables */
+.article th { background-color: var(--tklab-primary); color: var(--tklab-white); padding: 0.8em; }
+.article td { border: 1px solid var(--tklab-water); padding: 0.8em; }
+.article tr:nth-child(even) { background-color: var(--tklab-bg); }
+
+/* Mobile table scroll */
+.wp-block-table, .article table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Blockquote */
+.article blockquote { background-color: var(--tklab-water); border-left: 4px solid var(--tklab-primary); padding: 1em 1.5em; border-radius: 0 8px 8px 0; }
+
+/* tklab buttons - contrast fixed */
+.tklab-button { background-color: var(--tklab-primary); color: var(--tklab-white); border: none; border-radius: 6px; padding: 0.8em 1.5em; transition: background-color 0.2s; cursor: pointer; }
+.tklab-button:hover { background-color: var(--tklab-accent); color: var(--tklab-text); }
+/* Submit buttons in forms */
+.article input[type="submit"], .wpcf7 input[type="submit"] { background-color: var(--tklab-primary); color: var(--tklab-white); border: none; border-radius: 6px; }
+.article input[type="submit"]:hover, .wpcf7 input[type="submit"]:hover { background-color: var(--tklab-accent); color: var(--tklab-text); }
+
+/* Footer */
+.footer { background: linear-gradient(135deg, var(--tklab-bg) 0%, var(--tklab-water) 100%); border-top: 2px solid var(--tklab-primary); }
+.footer a { color: var(--tklab-primary); }
+.copyright { color: var(--tklab-muted); }
+
+/* Sidebar */
+.sidebar { background-color: var(--tklab-white); border-radius: 8px; }
+.widget-title { color: var(--tklab-primary); border-bottom: 2px solid var(--tklab-water); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .header-container { padding: 0.5em; }
+  .entry-card-wrap { margin: 0.5em 0; border-radius: 6px; }
+  .article { border-radius: 0; }
+}
