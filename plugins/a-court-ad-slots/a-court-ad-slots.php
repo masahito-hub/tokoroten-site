@@ -17,6 +17,7 @@ register_activation_hook(__FILE__, function() {
 });
 
 class ACourtAdSlots {
+    private const MIDDLE_MARKER = '<!-- acourt-ad-middle -->';
     private static $instance = null;
     private $options;
 
@@ -91,9 +92,9 @@ class ACourtAdSlots {
         $o = $this->options;
         $top = $o['slot_top'] ? $this->slot('top', '記事上部') : '';
         $bottom = $o['slot_bottom'] ? $this->slot('bottom', '記事下部') : '';
-        if ($o['slot_middle'] && strpos($content, '<!-- ad:middle -->') !== false) {
+        if ($o['slot_middle'] && strpos($content, self::MIDDLE_MARKER) !== false) {
             $mid = $this->slot('middle', '記事中央');
-            $content = str_replace('<!-- ad:middle -->', $mid, $content);
+            $content = str_replace(self::MIDDLE_MARKER, $mid, $content);
         }
         return $top . $content . $bottom;
     }
