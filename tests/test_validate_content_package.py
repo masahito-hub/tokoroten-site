@@ -35,6 +35,26 @@ def png_bytes(width, height):
     return signature + chunk
 
 
+def png_bytes_bad_chunk_type(width, height):
+    """PNG signature followed by a first chunk that is not IHDR, but whose
+    payload still holds width/height at the same byte offsets."""
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr_data = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    crc = struct.pack(">I", zlib.crc32(b"IDAT" + ihdr_data) & 0xFFFFFFFF)
+    chunk = struct.pack(">I", len(ihdr_data)) + b"IDAT" + ihdr_data + crc
+    return signature + chunk
+
+
+def png_bytes_bad_chunk_length(width, height):
+    """PNG signature followed by an IHDR chunk whose declared length is
+    wrong, while width/height still sit at the expected byte offsets."""
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr_data = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    crc = struct.pack(">I", zlib.crc32(b"IHDR" + ihdr_data) & 0xFFFFFFFF)
+    chunk = struct.pack(">I", 20) + b"IHDR" + ihdr_data + crc
+    return signature + chunk
+
+
 def default_metadata():
     return {
         "title": VALID_TITLE,
@@ -85,6 +105,13 @@ def write_png(pkg_dir, rel_path, width, height):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
         f.write(png_bytes(width, height))
+
+
+def write_png_bytes(pkg_dir, rel_path, data):
+    path = os.path.join(pkg_dir, rel_path)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(data)
 
 
 def build_valid_package(pkg_dir):
@@ -254,6 +281,48 @@ class ValidateContentPackageTests(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertTrue(any("empty" in e for e in result.errors))
 
+    def test_png_wrong_chunk_type_fails(self):
+        write_png_bytes(
+            self.pkg_dir,
+            "images/featured.png",
+            png_bytes_bad_chunk_type(1200, 630),
+        )
+        result = vcp.validate_package(self.pkg_dir)
+        self.assertFalse(result.ok)
+        self.assertTrue(any("not a valid PNG file" in e for e in result.errors))
+
+    def test_png_wrong_chunk_length_fails(self):
+        write_png_bytes(
+            self.pkg_dir,
+            "images/featured.png",
+            png_bytes_bad_chunk_length(1200, 630),
+        )
+        result = vcp.validate_package(self.pkg_dir)
+        self.assertFalse(result.ok)
+        self.assertTrue(any("not a valid PNG file" in e for e in result.errors))
+
+    def test_png_non_positive_dimensions_fails(self):
+        write_png(self.pkg_dir, "images/featured.png", 0, 630)
+        result = vcp.validate_package(self.pkg_dir)
+        self.assertFalse(result.ok)
+        self.assertTrue(any("not a valid PNG file" in e for e in result.errors))
+
+    def test_symlink_escape_fails(self):
+        outside_path = os.path.join(self.tmp.name, "outside.png")
+        with open(outside_path, "wb") as f:
+            f.write(png_bytes(1200, 630))
+        link_path = os.path.join(self.pkg_dir, "images", "featured_link.png")
+        try:
+            os.symlink(outside_path, link_path)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks are not supported on this platform")
+        metadata = default_metadata()
+        metadata["featured_image"] = "images/featured_link.png"
+        write_metadata(self.pkg_dir, metadata)
+        result = vcp.validate_package(self.pkg_dir)
+        self.assertFalse(result.ok)
+        self.assertTrue(any("safe path" in e for e in result.errors))
+
 
 class CliTests(unittest.TestCase):
     def setUp(self):
@@ -291,6 +360,24 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         self.assertIn("PASS: article-a", output)
         self.assertIn("FAIL: article-b", output)
+
+    def test_main_flags_package_missing_metadata_under_parent_directory(self):
+        parent_dir = os.path.join(self.tmp.name, "content-samples")
+        build_valid_package(os.path.join(parent_dir, "article-a"))
+        no_metadata_dir = os.path.join(parent_dir, "article-no-metadata")
+        os.makedirs(no_metadata_dir)
+        write_post(no_metadata_dir)
+        write_source_notes(no_metadata_dir)
+        write_readme(no_metadata_dir)
+        # metadata.json is intentionally missing.
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = vcp.main([parent_dir])
+        output = stdout.getvalue()
+        self.assertEqual(exit_code, 1)
+        self.assertIn("PASS: article-a", output)
+        self.assertIn("FAIL: article-no-metadata", output)
+        self.assertIn("metadata.json: required file is missing", output)
 
     def test_main_reports_error_when_no_package_found(self):
         empty_dir = os.path.join(self.tmp.name, "empty")

@@ -71,7 +71,11 @@ def resolve_safe_path(package_dir, rel_path):
 
 
 def read_png_dimensions(path):
-    """Return (width, height) for a valid PNG file, or None if invalid."""
+    """Return (width, height) for a valid PNG file, or None if invalid.
+
+    Validates the PNG signature and that the first chunk is a well-formed
+    IHDR (length 13, type 'IHDR') before trusting the embedded dimensions.
+    """
     try:
         with open(path, "rb") as f:
             header = f.read(33)
@@ -79,7 +83,13 @@ def read_png_dimensions(path):
         return None
     if len(header) < 33 or header[:8] != PNG_SIGNATURE:
         return None
+    chunk_length = struct.unpack(">I", header[8:12])[0]
+    chunk_type = header[12:16]
+    if chunk_length != 13 or chunk_type != b"IHDR":
+        return None
     width, height = struct.unpack(">II", header[16:24])
+    if width <= 0 or height <= 0:
+        return None
     return width, height
 
 
@@ -255,16 +265,29 @@ def validate_package(package_dir):
     return result
 
 
+def _looks_like_package(path):
+    """Return True if path is a directory containing any required package file.
+
+    Used to distinguish article package directories from unrelated
+    subdirectories (e.g. an `images/` folder) when scanning a parent
+    directory, without requiring metadata.json specifically -- a package
+    missing metadata.json should still be picked up and reported as FAIL.
+    """
+    if not os.path.isdir(path):
+        return False
+    return any(os.path.isfile(os.path.join(path, name)) for name in REQUIRED_FILES)
+
+
 def find_packages(path):
     """Return a list of package directories to validate for the given path."""
-    if os.path.isfile(os.path.join(path, "metadata.json")):
+    if _looks_like_package(path):
         return [path]
 
     packages = []
     if os.path.isdir(path):
         for entry in sorted(os.listdir(path)):
             sub = os.path.join(path, entry)
-            if os.path.isdir(sub) and os.path.isfile(os.path.join(sub, "metadata.json")):
+            if _looks_like_package(sub):
                 packages.append(sub)
     return packages
 
