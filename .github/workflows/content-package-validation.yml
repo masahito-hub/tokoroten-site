@@ -13,6 +13,7 @@ jobs:
   validate-content-packages:
     name: Validate Content Packages
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
