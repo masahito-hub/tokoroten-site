@@ -34,10 +34,11 @@ AD_MARKER = "<!-- acourt-ad-middle -->"
 
 
 class TestEscapeYamlString(unittest.TestCase):
-    """Test YAML string escaping."""
+    """Test YAML string escaping with json.dumps."""
     
     def test_plain_string(self):
-        self.assertEqual(escape_yaml_string("hello"), "hello")
+        # json.dumps always quotes
+        self.assertEqual(escape_yaml_string("hello"), '"hello"')
     
     def test_string_with_colon(self):
         result = escape_yaml_string("foo: bar")
@@ -141,7 +142,7 @@ class TestBuildFrontmatter(unittest.TestCase):
         }
         result = build_frontmatter(metadata)
         self.assertIn("title:", result)
-        self.assertIn("slug: test-slug", result)
+        self.assertIn("slug: \"test-slug\"", result)
         self.assertIn("status: draft", result)
     
     def test_forces_draft_status(self):
@@ -163,8 +164,8 @@ class TestBuildFrontmatter(unittest.TestCase):
         }
         result = build_frontmatter(metadata)
         self.assertIn("categories:", result)
-        self.assertIn("  - Cat1", result)
-        self.assertIn("  - Cat2", result)
+        self.assertIn("  - \"Cat1\"", result)
+        self.assertIn("  - \"Cat2\"", result)
     
     def test_starts_and_ends_with_dashes(self):
         metadata = {"title": "Test", "slug": "test", "categories": []}
@@ -259,9 +260,9 @@ class TestGoldenArticleIntegration(unittest.TestCase):
         with zipfile.ZipFile(output_path, "r") as zf:
             content = zf.read("post.md").decode("utf-8")
         
-        # Check each field
-        self.assertIn(f"title: {metadata['title']}", content)
-        self.assertIn(f"slug: {metadata['slug']}", content)
+        # Check each field (json.dumps format)
+        self.assertIn(f"title: {json.dumps(metadata['title'], ensure_ascii=False)}", content)
+        self.assertIn(f"slug: {json.dumps(metadata['slug'], ensure_ascii=False)}", content)
         self.assertIn(metadata["description"], content)
         for cat in metadata["categories"]:
             self.assertIn(cat, content)
@@ -500,8 +501,8 @@ class TestAutoBlogContractCompliance(unittest.TestCase):
         with zipfile.ZipFile(output_path, "r") as zf:
             content = zf.read("post.md").decode("utf-8")
         
-        # Extract slug from frontmatter
-        match = re.search(r"slug:\s*(\S+)", content)
+        # Extract slug from frontmatter (json.dumps format)
+        match = re.search(r'slug:\s*"([^"]+)"', content)
         self.assertIsNotNone(match)
         slug = match.group(1)
         self.assertRegex(slug, r"^[a-z0-9-]+$")
@@ -536,8 +537,8 @@ class TestAutoBlogContractCompliance(unittest.TestCase):
             content = zf.read("post.md").decode("utf-8")
             names = zf.namelist()
         
-        # Extract featured_image from frontmatter
-        match = re.search(r"featured_image:\s*(\S+)", content)
+        # Extract featured_image from frontmatter (json.dumps format)
+        match = re.search(r'featured_image:\s*"([^"]+)"', content)
         self.assertIsNotNone(match)
         featured_image = match.group(1)
         self.assertIn(featured_image, names)
@@ -545,3 +546,76 @@ class TestAutoBlogContractCompliance(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestYamlSafetyWithPyYAML(unittest.TestCase):
+    """Test that escaped values parse as strings in PyYAML."""
+    
+    def _parse(self, escaped):
+        import yaml
+        return yaml.safe_load(f"key: {escaped}")["key"]
+    
+    def test_yes(self):
+        self.assertEqual(self._parse(escape_yaml_string("yes")), "yes")
+    
+    def test_no(self):
+        self.assertEqual(self._parse(escape_yaml_string("no")), "no")
+    
+    def test_null(self):
+        self.assertEqual(self._parse(escape_yaml_string("null")), "null")
+    
+    def test_true(self):
+        self.assertEqual(self._parse(escape_yaml_string("true")), "true")
+    
+    def test_false(self):
+        self.assertEqual(self._parse(escape_yaml_string("false")), "false")
+    
+    def test_number(self):
+        self.assertEqual(self._parse(escape_yaml_string("123")), "123")
+    
+    def test_date(self):
+        self.assertEqual(self._parse(escape_yaml_string("2026-07-10")), "2026-07-10")
+    
+    def test_quotes(self):
+        self.assertEqual(self._parse(escape_yaml_string('say "hi"')), 'say "hi"')
+    
+    def test_backslash(self):
+        self.assertEqual(self._parse(escape_yaml_string("a\\b")), "a\\b")
+    
+    def test_newline(self):
+        self.assertEqual(self._parse(escape_yaml_string("a\nb")), "a\nb")
+
+
+class TestImagePathPrefix(unittest.TestCase):
+    """Test that image paths must be under images/."""
+    
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.temp_dir, "images"))
+        with open(os.path.join(self.temp_dir, "images", "ok.png"), "wb") as f:
+            f.write(b"PNG")
+    
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+    
+    def test_images_prefix_ok(self):
+        metadata = {"featured_image": "images/ok.png"}
+        result = collect_images(self.temp_dir, metadata)
+        self.assertEqual(len(result), 1)
+    
+    def test_no_prefix_fails(self):
+        metadata = {"featured_image": "foo.png"}
+        with self.assertRaises(ValueError) as ctx:
+            collect_images(self.temp_dir, metadata)
+        self.assertIn("images/", str(ctx.exception))
+    
+    def test_assets_prefix_fails(self):
+        metadata = {"featured_image": "assets/foo.png"}
+        with self.assertRaises(ValueError) as ctx:
+            collect_images(self.temp_dir, metadata)
+        self.assertIn("images/", str(ctx.exception))
+    
+    def test_traversal_fails(self):
+        metadata = {"featured_image": "images/../foo.png"}
+        with self.assertRaises(ValueError):
+            collect_images(self.temp_dir, metadata)

@@ -26,28 +26,15 @@ from datetime import datetime
 VALIDATE_SCRIPT = os.path.join(os.path.dirname(__file__), "validate_content_package.py")
 
 # YAML-unsafe characters that need escaping
-YAML_SPECIAL_CHARS = re.compile(r"[:\#\[\]\{\}\&\*\!\|\>\'\"\%\@\`]")
+# Removed - using json.dumps instead
 
 
 def escape_yaml_string(value):
-    """Escape a string value for safe YAML output.
-    
-    Returns a double-quoted string if the value contains special characters,
-    otherwise returns the plain value.
-    """
+    """Escape using json.dumps for YAML safety."""
+    import json
     if not isinstance(value, str):
-        return str(value)
-    
-    # Always quote if contains special chars, newlines, or leading/trailing whitespace
-    if (YAML_SPECIAL_CHARS.search(value) or 
-        "\n" in value or 
-        value != value.strip() or
-        value.startswith("-") or
-        value.startswith("?")):
-        # Escape backslashes and double quotes
-        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-        return f'"{escaped}"'
-    return value
+        value = str(value)
+    return json.dumps(value, ensure_ascii=False)
 
 
 def build_frontmatter(metadata):
@@ -136,6 +123,9 @@ def collect_images(package_dir, metadata):
         if not rel_path:
             continue
         
+        # Require images/ prefix
+        if not rel_path.replace("\\\\", "/").startswith("images/"):
+            raise ValueError(f"Image path must be under images/: {rel_path!r}")
         abs_path = resolve_safe_path(package_dir, rel_path)
         if abs_path is None:
             raise ValueError(
@@ -246,7 +236,7 @@ def build_autoblog_zip(package_dir, output_dir, force=False):
                     zf.writestr(info, img_f.read())
         
         # Atomic rename
-        shutil.move(temp_path, output_path)
+        os.replace(temp_path, output_path)
         
     except Exception:
         # Clean up temp file on error
